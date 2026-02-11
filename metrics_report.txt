@@ -1,0 +1,47 @@
+Model Evaluation Report
+
+==============================
+Evaluating DAILY Model
+==============================
+
+--- Classification Report ---
+              precision    recall  f1-score   support
+
+         Buy       0.36      0.40      0.38      8152
+        Hold       0.64      0.62      0.63     15769
+        Sell       0.35      0.34      0.34      7316
+
+    accuracy                           0.49     31237
+   macro avg       0.45      0.45      0.45     31237
+weighted avg       0.50      0.49      0.50     31237
+
+--- Confusion Matrix ---
+           Pred Buy  Pred Hold  Pred Sell
+True Buy       3252       2834       2066
+True Hold      3480       9703       2586
+True Sell      2237       2587       2492
+
+Overall Accuracy: 49.45%
+
+==============================
+Evaluating INTRADAY Model
+==============================
+
+--- Classification Report ---
+              precision    recall  f1-score   support
+
+         Buy       0.09      0.22      0.13       267
+        Hold       0.99      0.93      0.96     16487
+        Sell       0.12      0.44      0.18       218
+
+    accuracy                           0.91     16972
+   macro avg       0.40      0.53      0.42     16972
+weighted avg       0.96      0.91      0.94     16972
+
+--- Confusion Matrix ---
+           Pred Buy  Pred Hold  Pred Sell
+True Buy         58        105        104
+True Hold       517      15357        613
+True Sell        46         77         95
+
+Overall Accuracy: 91.39%

@@ -1,0 +1,8 @@
+=== Model Evaluation Summary ===
+Overall MAE: 0.0182
+Overall RMSE: 0.0264
+Overall Directional Accuracy: 56.11%
+
+Interpretation:
+- MAE of 0.0182 means on average the prediction is off by 1.82 percentage points.
+- Directional Accuracy of 56.11% means the model correctly predicts Up/Down 56.1% of the time.

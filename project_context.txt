@@ -1,0 +1,87 @@
+# Portfolio Risk Analyzer - Project Context
+
+## 1. Project Overview
+**Portfolio Risk Analyzer** is an algorithmic trading dashboard that allows users to analyze stock market data, receive AI-powered Buy/Sell signals, and assess portfolio risk.
+It combines a **Python FastAPI backend** (for data retrieval, technical analysis, and ML inference) with a **React frontend** (for data visualization and user interaction).
+
+## 2. Technology Stack
+
+### Backend
+*   **Language:** Python 3.10+
+*   **Framework:** FastAPI (REST API)
+*   **ML Libraries:** XGBoost (Classification/Regression), Scikit-Learn (Preprocessing), TensorFlow/Keras (LSTM - Experimental), Numpy, Pandas.
+*   **Data Sources:**
+    *   `yfinance`: Stock price data (Daily & Intraday 5m).
+    *   `FRED API`: Macroeconomic data (CPI, GDP, Unemployment).
+    *   `NewsAPI`: Sentiment analysis (using VADER).
+    *   `CCXT`: Crypto live prices (Binance/Coinbase).
+*   **Database:** MySQL (User auth, portfolio data).
+*   **Trading Logic:** Technical Indicators (RSI, MACD, Bollinger Bands, ATR, ADX, etc.) implemented in `utils.py`.
+
+### Frontend
+*   **Framework:** React 19 (`create-react-app` / `react-scripts`).
+*   **Styling:** TailwindCSS + Vanilla CSS.
+*   **Charts:** Recharts (History), Lightweight Charts (TradingView style).
+*   **State/Routing:** React Router v6, Axios for API calls.
+
+## 3. Data Pipeline (`backend/utils.py`, `backend/train_quant_model.py`)
+1.  **Ingestion:** Fetches OHLCV data for stocks/crypto/indices using `yfinance`.
+2.  **Feature Engineering:**
+    *   Adds Technical Indicators: SMA, EMA, MACD, RSI, Bollinger Bands, ATR, ADX, OBV, Stochastic Oscillator.
+    *   Adds Pattern Recognition: Doji, Hammer, Engulfing.
+    *   Adds Macro Data: CPI, GDP, Unemployment Rate.
+    *   Adds Sentiment: VADER score from NewsAPI headlines.
+    *   Adds Lags: Lagged returns/volatility for temporal context.
+3.  **Preprocessing:** Handles missing values (ffill/bfill), scales features (`StandardScaler`), and encodes signals.
+
+## 4. Machine Learning Models
+The system uses multiple models stored in `models/`:
+
+### A. Daily Quant Model (`model_quant_daily.pkl`)
+*   **Type:** XGBoost Classifier.
+*   **Goal:** Predict next-day direction (Buy / Hold / Sell).
+*   **Thresholds:** >1% Gain = Buy, <-1% Loss = Sell.
+*   **Performance:** ~50% Accuracy (Balanced Precision/Recall).
+*   **Features:** Technicals + Macro + Sentiment.
+
+### B. Intraday Quant Model (`model_quant_intraday.pkl`)
+*   **Type:** XGBoost Classifier.
+*   **Goal:** Predict next 5-minute direction.
+*   **Performance:** ~91% Accuracy (High recall on Hold, improving on signals).
+*   **Training:** Uses class balancing to handle "Hold" dominance.
+
+### C. Scalper Model (`model_scalper.pkl`)
+*   **Type:** Specialized XGBoost Model.
+*   **Goal:** Real-time trade validation (Strong Buy/Sell warning).
+
+## 5. Decision Engine (`backend/decision_engine.py`)
+This is the core intelligence layer that fuses all inputs to produce a single "Professional-Grade" decision.
+*   **Logic:**
+    1.  **Multi-Timeframe Fusion:** Combines Daily (bias), Intraday (momentum), and Scalper (entry) signals.
+    2.  **Probabilistic Rules:** Only triggers BUY if Prob > 0.45 AND diff > 0.07.
+    3.  **Risk Filters:** Downgrades confidence if Volatility is High or Sentiment is Negative.
+    4.  **No-Trade Zones:** Forces HOLD if markets are choppy (low ADX, neutral RSI).
+*   **Output:** Returns a JSON with `final_action` (BUY/SELL/HOLD), `confidence_score` (0-100), and a detailed `explanation`.
+
+## 6. API Endpoints (`backend/api.py`)
+*   `POST /predict`: Single point prediction for a stock (Daily).
+*   `GET /analyze_stock/{ticker}`: Comprehensive analysis returning Swing (Daily) and Intraday signals, risk assessment, and sentiment.
+*   `GET /live_predictions`: Batch analysis for a predefined watchlist (AAPL, TSLA, BTC, etc.).
+*   `GET /stock_price/{ticker}`: Real-time price check.
+*   `POST /register` & `/login`: MySQL-backed authentication.
+
+## 6. Key Features
+*   **Dual-Horizon Analysis:** Provides both "Swing" (Daily) and "Intraday" signals.
+*   **Risk Assessment:** classifications (Low/Medium/High) based on Volatility (`vol_10`).
+*   **Real-time Dashboard:** Auto-refreshing prices and signals.
+*   **Telegram Integration:** Can send alerts to a configured Telegram chat.
+
+## 7. Backtesting & Risk Engine
+*   **Risk Engine (`backend/risk_engine.py`)**:
+    *   **Position Sizing**: Based on Risk% (1.5%) and Stop Loss distance.
+    *   **Stop Loss**: ATR-based dynamic stops (0.8x Scalp, 1.8x Swing).
+    *   **Kill Switch**: Prevents trading if Max Drawdown > 12%.
+*   **Backtest Engine (`backend/backtest_engine.py`)**:
+    *   Event-driven simulator that runs historical data through the Decision Logic.
+    *   Produces professional metrics: Sharpe Ratio, Sortino Ratio, Max Drawdown, Profit Factor.
+    *   Usage: `python scripts/run_backtest.py NVDA`
